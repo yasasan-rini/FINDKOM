@@ -2,60 +2,44 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SesiPengguna;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Throwable;
 
+/**
+ * [AR] SC03 — LoginController
+ * Pseudocode : PC002 autentikasi(kredensial)
+ * Sequence   : SD-02 | Use Case: UC-02 | UI: UI-02 / UI-002
+ * STATUS: BELUM DIKERJAKAN — silakan isi oleh AR.
+ *
+ * Yang harus dikerjakan (PC002):
+ *  1. Validasi email (domain UB), password, peran (CIVITAS|SECURITY).
+ *  2. Cari User berdasarkan email; Hash::check terhadap passwordHash.
+ *  3. Cocokkan role akun dengan tab peran yang dipilih.
+ *  4. Auth::login + session()->regenerate(); buat baris SesiPengguna
+ *     (sid, userId, hakAkses, createdAt, expiredAt = now()+12 jam).
+ *     Model SesiPengguna milik YN sudah siap dipakai.
+ *  5. Redirect: SECURITY -> route('dashboard'), CIVITAS -> route('beranda').
+ *  6. keluar(): hapus SesiPengguna, Auth::logout, invalidate + regenerateToken.
+ *  7. demo(): login cepat akun demo (opsional, untuk presentasi).
+ */
 class LoginController extends Controller
 {
     public function bukaHalamanLogin()
     {
-        return view('auth.login');
+        abort(501, 'Belum dikerjakan: AR — SC03 halaman login (UI-02).');
     }
 
     public function autentikasi(Request $request)
     {
-        $kredensial = $request->validate([
-            'login' => 'required|string',
-            'password' => 'required|string',
-        ], [
-            'login.required' => 'Semua field wajib diisi',
-            'password.required' => 'Semua field wajib diisi',
-        ]);
+        abort(501, 'Belum dikerjakan: AR — PC002 autentikasi().');
+    }
 
-        try {
-            $user = User::where('username', $kredensial['login'])
-                ->orWhere('email', $kredensial['login'])
-                ->first();
+    public function demo(Request $request, string $role)
+    {
+        abort(501, 'Belum dikerjakan: AR — login demo (opsional).');
+    }
 
-            if (!$user || !Hash::check($kredensial['password'], $user->passwordHash)) {
-                return back()
-                    ->withInput($request->only('login'))
-                    ->with('error', 'Username/email atau password salah');
-            }
-
-            $hakAkses = $user->role;
-
-            Auth::login($user);
-            $request->session()->regenerate();
-
-            SesiPengguna::create([
-                'sid' => $request->session()->getId(),
-                'userId' => $user->id,
-                'hakAkses' => $hakAkses,
-                'createdAt' => now(),
-                'expiredAt' => now()->addHours(12),
-            ]);
-
-        } catch (Throwable $e) {
-            report($e);
-            return back()->with('error', 'Proses login gagal');
-        }
-
-        $tujuan = $hakAkses === 'SECURITY' ? 'security.dashboard' : 'civitas.home';
-        return redirect()->route($tujuan)->with('success', 'Login berhasil');
+    public function keluar(Request $request)
+    {
+        abort(501, 'Belum dikerjakan: AR — keluar()/logout.');
     }
 }

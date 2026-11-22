@@ -2,34 +2,26 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ReportFields;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * [AR] Entitas FoundReport
+ * STATUS: KERANGKA. Trait ReportFields sudah menyediakan relasi & accessor umum.
+ * TODO AR: isi $fillable dan relasi receiver().
+ */
 class FoundReport extends Model
 {
+    use HasFactory, HasUuids, ReportFields;
+
     protected $table = 'FoundReport';
+    public $timestamps = false;
     public $incrementing = false;
     protected $keyType = 'string';
-    public $timestamps = false;
+    protected $guarded = ['id'];
 
-    protected $fillable = [
-        'id', 'reportCode', 'reporterId', 'reporterName', 'locationId',
-        'floorRoom', 'foundDate', 'foundTime', 'categoryId', 'description',
-        'photoUrl', 'status', 'receivedBy', 'receivedAt', 'receiptNote',
-        'createdAt', 'updatedAt',
-    ];
-
-    public function location()
-    {
-        return $this->belongsTo(Location::class, 'locationId');
-    }
-
-    public function category()
-    {
-        return $this->belongsTo(Category::class, 'categoryId');
-    }
-
-    public function reporter()
-    {
-        return $this->belongsTo(User::class, 'reporterId');
-    }
+    // TODO AR — ganti $guarded dengan $fillable sesuai DDL, lalu tambah:
+    // public function receiver() { return $this->belongsTo(User::class, 'receivedBy'); }
 }

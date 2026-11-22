@@ -2,24 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
+    use HasUuids;
     protected $table = 'Notification';
+    public $timestamps = false;
     public $incrementing = false;
     protected $keyType = 'string';
-    public $timestamps = false;
+    protected $fillable = ['userId', 'matchId', 'message', 'isRead', 'createdAt'];
+    protected $casts = ['isRead' => 'boolean'];
 
-    protected $fillable = ['id', 'userId', 'matchId', 'message', 'isRead', 'createdAt'];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'userId');
-    }
-
-    public function match()
-    {
-        return $this->belongsTo(ReportMatch::class, 'matchId');
-    }
+    public function user() { return $this->belongsTo(User::class, 'userId'); }
+    public function match() { return $this->belongsTo(ReportMatch::class, 'matchId'); }
 }
