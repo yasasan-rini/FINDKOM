@@ -14,3 +14,5 @@ Stack: Laravel 12 · Blade · MySQL 8.0 (XAMPP) · Apache/`artisan serve`.
    #   database/migrations/0001_01_01_000000_create_users_table.php
    #   database/migrations/0001_01_01_000001_create_cache_table.php
    #   database/migrations/0001_01_01_000002_create_jobs_table.php
+
+   ini alya
