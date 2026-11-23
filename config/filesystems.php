@@ -4,8 +4,7 @@ return [
     'default' => env('FILESYSTEM_DISK', 'local'),
 
     'disks' => [
-        // Bukti serah terima (foto KTM) = dokumen identitas.
-        // 'serve' => false mematikan rute otomatis framework penyaji berkas privat.
+        // Bukti serah terima (foto KTM) — TIDAK boleh dilayani otomatis oleh framework.
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
@@ -13,7 +12,7 @@ return [
             'throw' => false,
         ],
 
-        // Foto barang temuan/referensi — publik lewat php artisan storage:link
+        // Foto barang temuan/referensi — publik lewat symlink storage:link.
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

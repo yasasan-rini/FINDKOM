@@ -7,9 +7,11 @@ use App\Models\FoundReport;
 use App\Models\HandoverEvidence;
 use App\Models\Location;
 use App\Models\LostReport;
+use App\Models\Notification;
 use App\Models\ReportMatch;
 use App\Models\Room;
 use App\Services\MatchingService;
+use App\Support\Pager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -41,31 +43,104 @@ class LaporanController extends Controller
         return $room ? $query->where('locationId', $room->locationId)->where('floorRoom', $room->name) : $query;
     }
 
-    /** [BK] UI-09 Status & Riwayat — BELUM DIKERJAKAN. */
+    /** UI-09 — Status & Riwayat + Notifikasi. */
     public function status(Request $request)
     {
-        abort(501, 'Belum dikerjakan: BK — UI-09 status & riwayat.');
+        $uid = auth()->id();
+        $filter = $request->query('filter', 'all');
+        $lost = LostReport::with(['category', 'location', 'matches'])->where('reporterId', $uid);
+        $found = FoundReport::with(['category', 'location', 'matches'])->where('reporterId', $uid);
+        $semua = $this->gabung($lost, $found, 'new');
+        $counts = ['all' => $semua->count(),
+            'aktif' => $semua->whereNotIn('status', ['CLOSED', 'NOTIFIED'])->count(),
+            'wait' => $semua->where('status', 'NOTIFIED')->count(),
+            'done' => $semua->where('status', 'CLOSED')->count()];
+        $laporan = match ($filter) {
+            'aktif' => $semua->whereNotIn('status', ['CLOSED', 'NOTIFIED'])->values(),
+            'wait' => $semua->where('status', 'NOTIFIED')->values(),
+            'done' => $semua->where('status', 'CLOSED')->values(),
+            default => $semua,
+        };
+        $notifikasi = Notification::where('userId', $uid)->orderByDesc('createdAt')->limit(10)->get();
+        return view('laporan.status', compact('laporan', 'filter', 'counts', 'notifikasi'));
     }
 
-    /** [AR] UI-10 Cari Barang — BELUM DIKERJAKAN. */
+    /** UI-10 — Cari Barang. */
     public function cari(Request $request)
     {
-        abort(501, 'Belum dikerjakan: AR — UI-10 cari barang.');
+        $q = trim((string) $request->query('q'));
+        $terapkan = function ($query, string $dateCol) use ($request, $q) {
+            $query->with(['category', 'location'])->where('status', '!=', 'CLOSED')
+                ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x
+                    ->where('reportCode', 'like', "%{$q}%")->orWhere('description', 'like', "%{$q}%")
+                    ->orWhereHas('category', fn ($c) => $c->where('name', 'like', "%{$q}%"))))
+                ->when($request->filled('locationId'), fn ($w) => $w->where('locationId', $request->query('locationId')))
+                ->when($request->filled('categoryId'), fn ($w) => $w->where('categoryId', $request->query('categoryId')))
+                ->when($request->filled('tanggal'), fn ($w) => $w->whereDate($dateCol, $request->query('tanggal')))
+                ->when($request->filled('range'), fn ($w) => $w->whereDate($dateCol, '>=', now()->subDays((int) $request->query('range'))->toDateString()));
+            $this->filterRuangan($query, $request->query('room'));
+        };
+        $type = $request->query('type');
+        $lost = LostReport::query(); $found = FoundReport::query();
+        $terapkan($lost, 'lostDate'); $terapkan($found, 'foundDate');
+        $items = $this->gabung($type === 'FOUND' ? $lost->whereRaw('1=0') : $lost,
+            $type === 'LOST' ? $found->whereRaw('1=0') : $found, $request->query('sort', 'new'));
+
+        return view('laporan.cari', [
+            'hasil' => Pager::paginate($items, 12),
+            'daftarGedung' => Location::orderBy('name')->get(),
+            'daftarKategori' => Category::orderBy('name')->get(),
+        ]);
     }
 
-    /** [VP] UI-12 Semua Laporan — BELUM DIKERJAKAN. */
+    /** Query bersama untuk UI-12 dan ekspor CSV — filter selalu identik. */
+    private function querySemua(Request $request)
+    {
+        $q = trim((string) $request->query('q'));
+        $terapkan = function ($query) use ($request, $q) {
+            $query->with(['category', 'location', 'reporter'])
+                ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x
+                    ->where('reportCode', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%")
+                    ->orWhereHas('reporter', fn ($r) => $r->where('namaLengkap', 'like', "%{$q}%"))))
+                ->when($request->filled('status'), fn ($w) => $w->where('status', $request->query('status')))
+                ->when($request->filled('locationId'), fn ($w) => $w->where('locationId', $request->query('locationId')));
+            $this->filterRuangan($query, $request->query('room'));
+        };
+        $type = $request->query('tipe');
+        $lost = LostReport::query(); $found = FoundReport::query();
+        $terapkan($lost); $terapkan($found);
+
+        return $this->gabung($type === 'FOUND' ? $lost->whereRaw('1=0') : $lost,
+            $type === 'LOST' ? $found->whereRaw('1=0') : $found, $request->query('sort', 'new'));
+    }
+
     public function semua(Request $request)
     {
-        abort(501, 'Belum dikerjakan: VP — UI-12 semua laporan.');
+        return view('laporan.semua', [
+            'laporan' => Pager::paginate($this->querySemua($request), 15),
+            'daftarGedung' => Location::orderBy('name')->get(),
+        ]);
     }
 
-    /** [VP] Ekspor CSV (mengikuti filter aktif) — BELUM DIKERJAKAN. */
     public function export(Request $request): StreamedResponse
     {
-        abort(501, 'Belum dikerjakan: VP — ekspor CSV.');
+        $items = $this->querySemua($request);
+        $nama = 'findkom-laporan-'.now()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($items) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['Kode', 'Jenis', 'Kategori', 'Gedung', 'Lantai/Ruang', 'Tanggal', 'Waktu', 'Status', 'Pelapor', 'Deskripsi'], ';');
+            foreach ($items as $r) {
+                fputcsv($out, [$r->reportCode, $r->tipe === 'LOST' ? 'Kehilangan' : 'Penemuan',
+                    $r->category->name, $r->location->name, $r->floorRoom, $r->eventDate, $r->eventTime,
+                    $r->labelStatus, $r->reporter?->namaLengkap ?? '-', $r->description], ';');
+            }
+            fclose($out);
+        }, $nama, ['Content-Type' => 'text/csv; charset=utf-8']);
     }
 
-    /** [YN] Detail laporan (integrasi lintas modul) — SUDAH TERISI. */
     public function detail(string $type, string $code)
     {
         $laporan = $this->kelas($type)::with(['category', 'location', 'reporter'])->where('reportCode', $code)->firstOrFail();
@@ -78,7 +153,6 @@ class LaporanController extends Controller
         return view('laporan.detail', compact('laporan', 'isSec', 'own', 'related', 'evidence'));
     }
 
-    /** [YN] Ubah laporan milik sendiri — SUDAH TERISI (view form diisi BK/AR). */
     public function edit(string $type, string $id)
     {
         $laporan = $this->kelas($type)::findOrFail($id);
@@ -90,7 +164,6 @@ class LaporanController extends Controller
         ]);
     }
 
-    /** [YN] Simpan perubahan + jalankan ulang pencocokan — SUDAH TERISI. */
     public function update(Request $request, string $type, string $id)
     {
         $laporan = $this->kelas($type)::findOrFail($id);
@@ -118,7 +191,6 @@ class LaporanController extends Controller
             "Laporan {$laporan->reportCode} diperbarui.".($jumlah ? " {$jumlah} kandidat baru ditemukan!" : ''));
     }
 
-    /** [YN] Hapus laporan milik sendiri + buka kembali kandidat — SUDAH TERISI. */
     public function destroy(string $type, string $id)
     {
         $laporan = $this->kelas($type)::findOrFail($id);

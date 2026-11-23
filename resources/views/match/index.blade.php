@@ -2,7 +2,7 @@
 @section('judul', 'Kandidat Kecocokan')
 @section('konten')
 <h1 class="reveal">Kandidat Kecocokan</h1>
-<p class="sub reveal">Hasil pencocokan otomatis (gedung + kategori + waktu ±4 hari). Bandingkan deskripsi &amp; foto sebelum memutuskan.</p>
+<p class="sub reveal">Hasil pencocokan otomatis (gedung + kategori + waktu ±4 hari). Verifikasi hanya bisa dilakukan setelah barang fisik diterima di pos (UC-06).</p>
 <div class="tabs reveal">
   <a href="{{ route('match.index') }}" class="{{ request('tab') !== 'baru' ? 'on' : '' }}">Semua</a>
   <a href="{{ route('match.index', ['tab' => 'baru']) }}" class="{{ request('tab') === 'baru' ? 'on' : '' }}">✨ Baru (24 jam)</a>
@@ -21,7 +21,7 @@
 <p class="mut small" style="margin-bottom:12px"><b>{{ $daftarKandidat->total() }}</b> kandidat menunggu verifikasi</p>
 <div class="mgrid">
   @forelse ($daftarKandidat as $m)
-    @php $s = $m->skor; $hot = $m->umurHari > 3; @endphp
+    @php $s = $m->skor; $hot = $m->umurHari > 3; $siap = $m->foundReport->receivedAt !== null; @endphp
     <article class="mc {{ $hot ? 'hot' : '' }} reveal">
       <div class="row sp"><b class="mono" style="font-size:14px">{{ $m->matchCode }}</b>
         @if ($hot)<span class="age" style="color:var(--coral2);background:var(--coralsoft)">{{ $m->umurHari }} hari!</span>
@@ -41,11 +41,17 @@
           @endforeach
         </div></div>
       <span class="tiny faint">📍 {{ $m->lostReport->location->name }} · selisih {{ $s['selisih'] }} hari · {{ \Illuminate\Support\Carbon::parse($m->createdAt)->diffForHumans() }}</span>
+      @if ($siap)<span class="tiny ok" style="font-weight:800">✓ Fisik barang sudah di pos</span>
+      @else<span class="tiny" style="color:var(--coral2);font-weight:800">📦 Fisik belum diterima di pos</span>@endif
       @if ($m->revisionNote)<span class="tiny" style="color:#1D5CA0">✉ Himbauan revisi terkirim</span>@endif
       <div class="row" style="margin-top:auto">
         <a class="btn sm" style="flex:1" href="{{ route('match.detail', $m->id) }}">Tinjau Detail</a>
-        <form method="POST" action="{{ route('match.cocok', $m->id) }}" data-confirm="Verifikasi kecocokan {{ $m->matchCode }}? Pelapor akan menerima notifikasi.">@csrf<button class="btn sm pr">✓</button></form>
-        <form method="POST" action="{{ route('match.tolak', $m->id) }}" data-confirm="Tandai bukan barang yang sama? Kedua laporan dibuka kembali.">@csrf<button class="btn sm dno">✕</button></form>
+        @if ($siap)
+          <form method="POST" action="{{ route('match.cocok', $m->id) }}" data-confirm="Verifikasi kecocokan {{ $m->matchCode }}? Pelapor akan menerima notifikasi.">@csrf<button class="btn sm pr" aria-label="Verifikasi cocok">✓</button></form>
+        @else
+          <a class="btn sm am" href="{{ route('receipt.index', ['id' => $m->foundReportId]) }}" title="Konfirmasi penerimaan fisik dulu">📦</a>
+        @endif
+        <form method="POST" action="{{ route('match.tolak', $m->id) }}" data-confirm="Tandai bukan barang yang sama? Kedua laporan dibuka kembali.">@csrf<button class="btn sm dno" aria-label="Tolak">✕</button></form>
       </div>
     </article>
   @empty <div class="empty" style="grid-column:1/-1"><b>Tidak ada kandidat saat ini</b>Kandidat muncul otomatis saat ada laporan yang cocok.</div> @endforelse

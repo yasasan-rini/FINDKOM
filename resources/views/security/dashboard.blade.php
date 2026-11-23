@@ -16,13 +16,15 @@
       <div class="row sp"><h3>Perlu Tindakan</h3><span class="tiny faint">kandidat terlama di atas</span></div>
       <div style="margin-top:12px">
         @forelse ($mendesak as $m)
+          @php $siap = $m->foundReport->receivedAt !== null; @endphp
           <div class="urgent {{ $m->umurHari > 3 ? 'hot' : '' }}">
             <div class="row sp"><div class="row"><b class="mono small">{{ $m->lostReport->reportCode }} ↔ {{ $m->foundReport->reportCode }}</b>
               <span class="age">{{ $m->umurHari === 0 ? 'hari ini' : $m->umurHari.' hari menunggu' }}</span></div>
               <span class="bd {{ $m->badgeClass }}">{{ $m->labelStatus }}</span></div>
             <div class="row sp" style="margin-top:7px">
-              <span class="mut small">{{ $m->lostReport->category->name }} · {{ $m->lostReport->location->name }} · skor <b>{{ $m->skor['total'] }}%</b></span>
-              <a class="btn sm pr" href="{{ route('match.detail', $m->id) }}">Tinjau</a></div></div>
+              <span class="mut small">{{ $m->lostReport->category->name }} · {{ $m->lostReport->location->name }} · skor <b>{{ $m->skor['total'] }}%</b>
+                @if (! $siap)<span class="tiny" style="color:var(--coral2);font-weight:800"> · fisik belum di pos</span>@endif</span>
+              <a class="btn sm {{ $siap ? 'pr' : 'am' }}" href="{{ $siap ? route('match.detail', $m->id) : route('receipt.index', ['id' => $m->foundReportId]) }}">{{ $siap ? 'Tinjau' : 'Terima fisik' }}</a></div></div>
         @empty <div class="empty"><b>Semua kandidat sudah ditinjau</b>Tidak ada yang menunggu verifikasi. Kerja bagus!</div> @endforelse
       </div>
     </div>
@@ -30,7 +32,10 @@
       <h3>Laporan masuk — 7 hari terakhir</h3>
       @php $W = 340; $base = 132; $gw = $W / 7; @endphp
       <svg class="chart" viewBox="0 0 {{ $W }} 168" style="margin-top:10px">
-        @for ($g = 0; $g <= 2; $g++)<line x1="8" y1="{{ $base - $g * 52 }}" x2="{{ $W - 8 }}" y2="{{ $base - $g * 52 }}" stroke="#E1EAE8" {{ $g ? 'stroke-dasharray=3 4' : '' }}/>@endfor
+        @for ($g = 0; $g <= 2; $g++)
+          <line x1="8" y1="{{ $base - $g * 52 }}" x2="{{ $W - 8 }}" y2="{{ $base - $g * 52 }}"
+                stroke="#E1EAE8" stroke-width="1" @if ($g) stroke-dasharray="3 4" @endif />
+        @endfor
         @foreach ($chart as $i => $d)
           @php $x = $i * $gw + $gw / 2; $hl = $d['lost'] / $chartMax * 104; $hf = $d['found'] / $chartMax * 104; @endphp
           <rect class="bar" x="{{ $x - 15 }}" y="{{ $base - max($hl, 2) }}" width="13" height="{{ max($hl, 2) }}" rx="4" fill="#E4573D" style="animation-delay:{{ $i * .06 }}s"/>

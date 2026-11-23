@@ -50,14 +50,14 @@ class MatchingLogicTest extends TestCase
         $this->assertSame(100, $s['total']);
     }
 
-    /** Ruang berbeda → lokasi 85; selisih 4 hari → waktu 68. */
+    /** Ruang berbeda menurunkan skor lokasi ke 85; selisih 4 hari → waktu 68. */
     public function test_skor_turun_bila_ruang_berbeda_dan_selisih_empat_hari(): void
     {
         $s = $this->pasangan('F2.1', 'Koridor F2', 4)->skor;
         $this->assertSame(85, $s['lokasi']);
         $this->assertSame(68, $s['waktu']);
         $this->assertSame(4, $s['selisih']);
-        $this->assertSame(84, $s['total']);
+        $this->assertSame(84, $s['total']); // (100+85+68)/3 dibulatkan
     }
 
     /** Skor waktu tidak boleh di bawah 60 walaupun selisihnya jauh. */
@@ -65,7 +65,7 @@ class MatchingLogicTest extends TestCase
     {
         $s = $this->pasangan('F2.1', 'F2.1', 10)->skor;
         $this->assertSame(60, $s['waktu']);
-        $this->assertSame(87, $s['total']);
+        $this->assertSame(87, $s['total']); // (100+100+60)/3 dibulatkan
     }
 
     /** UC-05: selisih 4 hari masih masuk jendela pencocokan. */

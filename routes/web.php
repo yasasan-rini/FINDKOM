@@ -11,6 +11,7 @@ use App\Http\Controllers\MatchController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RegistrasiController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route(auth()->check()
@@ -19,18 +20,19 @@ Route::get('/', fn () => redirect()->route(auth()->check()
 /* ---- Guest: UI-01 / UI-02 ---- */
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'bukaHalamanLogin'])->name('login');
-    Route::post('/login', [LoginController::class, 'autentikasi'])->name('autentikasi');
-    Route::post('/login/demo/{role}', [LoginController::class, 'demo'])->name('login.demo');
+    Route::post('/login', [LoginController::class, 'autentikasi'])->middleware('throttle:login')->name('autentikasi');
+    Route::post('/login/demo/{role}', [LoginController::class, 'demo'])->middleware('throttle:login')->name('login.demo');
     Route::get('/registrasi', [RegistrasiController::class, 'form'])->name('registrasi.form');
-    Route::post('/registrasi', [RegistrasiController::class, 'registrasi'])->name('registrasi');
+    Route::post('/registrasi', [RegistrasiController::class, 'registrasi'])->middleware('throttle:6,1')->name('registrasi');
 });
 
 Route::post('/logout', [LoginController::class, 'keluar'])->middleware('auth')->name('logout');
 
 /* ---- Civitas FILKOM ---- */
-Route::middleware(['auth', 'role:CIVITAS'])->group(function () {
+Route::middleware(['auth', 'sesi', 'role:CIVITAS'])->group(function () {
     Route::get('/beranda', [HomeController::class, 'beranda'])->name('beranda');
-    Route::get('/lapor', fn () => redirect()->route('kehilangan.form'))->name('laporan.buat');
+    Route::get('/lapor', fn (Request $r) => redirect()->route(
+        $r->query('type') === 'found' ? 'penemuan.form' : 'kehilangan.form'))->name('laporan.buat');
     Route::get('/lapor/kehilangan', [LaporanKehilanganController::class, 'form'])->name('kehilangan.form');
     Route::post('/lapor/kehilangan', [LaporanKehilanganController::class, 'buatLaporan'])->name('kehilangan.buat');
     Route::get('/lapor/penemuan', [LaporanPenemuanController::class, 'bukaFormPenemuan'])->name('penemuan.form');
@@ -40,7 +42,7 @@ Route::middleware(['auth', 'role:CIVITAS'])->group(function () {
 });
 
 /* ---- Security FILKOM ---- */
-Route::middleware(['auth', 'role:SECURITY'])->group(function () {
+Route::middleware(['auth', 'sesi', 'role:SECURITY'])->group(function () {
     Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard');
     Route::get('/kandidat', [MatchController::class, 'index'])->name('match.index');
     Route::get('/kandidat/{id}', [MatchController::class, 'detail'])->name('match.detail');
@@ -62,12 +64,16 @@ Route::middleware(['auth', 'role:SECURITY'])->group(function () {
     Route::get('/semua-laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
 });
 
-/* ---- Bersama (auth) ---- */
-Route::middleware('auth')->group(function () {
+/* ---- Bersama (auth): otorisasi dicek di controller ---- */
+Route::middleware(['auth', 'sesi'])->group(function () {
     Route::get('/laporan/{type}/{code}', [LaporanController::class, 'detail'])->name('laporan.detail');
     Route::get('/laporan/{type}/{id}/edit', [LaporanController::class, 'edit'])->name('laporan.edit');
     Route::put('/laporan/{type}/{id}', [LaporanController::class, 'update'])->name('laporan.update');
     Route::delete('/laporan/{type}/{id}', [LaporanController::class, 'destroy'])->name('laporan.destroy');
+    Route::get('/serah-terima/bukti/{evidence}/{jenis}', [HandoverController::class, 'foto'])->name('handover.foto');
     Route::get('/notifikasi/{id}', [NotificationController::class, 'baca'])->name('notifikasi.baca');
     Route::post('/notifikasi/baca-semua', [NotificationController::class, 'bacaSemua'])->name('notifikasi.bacaSemua');
+    // Pembaruan langsung (PKB-SRS-04 / PPB-SRS-09) — polling ringan tiap 25 detik
+    Route::get('/api/status-ringkas', [NotificationController::class, 'ringkas'])
+        ->middleware('throttle:60,1')->name('api.ringkas');
 });

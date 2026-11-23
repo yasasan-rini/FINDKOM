@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="{{ csrf_token() }}">
+@auth<meta name="ringkas-url" content="{{ route('api.ringkas') }}">@endauth
 <title>@yield('judul', 'FINDKOM') | Findkom — FILKOM UB</title>
 <link rel="icon" href="{{ asset('img/favicon.svg') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,8 +24,8 @@ a{color:var(--teal);text-decoration:none}a:hover{color:var(--teal2)}
 img{display:block;max-width:100%}button{font:inherit;cursor:pointer}
 input,select,textarea{font:inherit;color:var(--tx)}
 .mono{font-family:var(--fm);font-weight:700;letter-spacing:.02em}.mut{color:var(--dim)}.faint{color:var(--faint)}
-.small{font-size:12.5px}.tiny{font-size:11.5px}.er{color:var(--er)}.ok{color:var(--ok,#2E9E5B)}
-:focus-visible{outline:3px solid rgba(42,157,143,.45);outline-offset:2px;border-radius:8px}
+.small{font-size:12.5px}.tiny{font-size:11.5px}.er{color:var(--er)}.ok{color:var(--green)}
+:focus-visible{outline:3px solid rgba(42,157,143,.55);outline-offset:2px;border-radius:8px}
 #bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
 #bg i{position:absolute;border-radius:50%;filter:blur(90px)}
 #bg .b1{width:560px;height:560px;left:-160px;top:-180px;background:radial-gradient(circle,#BFE3DA,transparent 70%);opacity:.5;animation:drift1 26s ease-in-out infinite alternate}
@@ -49,6 +50,8 @@ input,select,textarea{font:inherit;color:var(--tx)}
 .bd.cand{background:var(--ambersoft);color:#8A6100}.bd.ver{background:var(--bluesoft);color:#1D5CA0}
 .bd.wait{background:#FFE9A8;color:#7A5600}.bd.wait::before{animation:pulse 1.6s infinite}
 .bd.done{background:var(--greensoft);color:var(--green2)}.bd.closed{background:#E2ECEA;color:var(--ink2)}.bd.rej{background:var(--coralsoft);color:var(--coral2)}
+.bd.flash{animation:flash 1.6s ease}
+@keyframes flash{0%{box-shadow:0 0 0 4px rgba(242,183,5,.6)}100%{box-shadow:none}}
 .ty{display:inline-flex;align-items:center;font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px;letter-spacing:.04em;text-transform:uppercase;color:var(--coral2);background:var(--coralsoft)}
 .ty.found{color:var(--green2);background:var(--greensoft)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
@@ -77,7 +80,7 @@ input,select,textarea{font:inherit;color:var(--tx)}
 .ava{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;background:linear-gradient(135deg,var(--teal3),var(--blue));flex:none}
 .ava.sec{background:linear-gradient(135deg,var(--amber),var(--coral))}
 .uchip .un{font-size:13px;font-weight:700;line-height:1.15;text-align:left}.uchip .ur{font-size:10px;color:var(--mint);font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-.npanel{position:absolute;top:calc(100% + 10px);right:0;width:min(380px,92vw);background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh2);padding:12px;display:none;z-index:70}
+.npanel{position:absolute;top:calc(100% + 10px);right:0;width:min(380px,92vw);background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh2);padding:12px;display:none;z-index:70;max-height:70vh;overflow-y:auto}
 .npanel.open{display:block;animation:popIn .18s}
 .npanel .nh{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 10px;border-bottom:1px solid var(--line);margin-bottom:8px}
 .notif{display:flex;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--paper);margin-bottom:8px;color:var(--tx);position:relative}
@@ -100,7 +103,7 @@ input,select,textarea{font:inherit;color:var(--tx)}
 table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px}
 th{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);text-align:left;padding:12px 15px;border-bottom:1.5px solid var(--line);background:#FAFCFB}
 td{padding:11px 15px;border-bottom:1px solid var(--line);vertical-align:middle}
-tr:last-child td{border-bottom:0}tr.cl{cursor:pointer}tr.cl:hover td{background:#F4FAF8}
+tr:last-child td{border-bottom:0}tr.cl{cursor:pointer}tr.cl:hover td,tr.cl:focus-visible td{background:#F4FAF8}
 .usage{font-size:11px;font-weight:800;color:var(--dim);background:var(--soft);padding:2px 9px;border-radius:99px}
 .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:16px}
 .rc{background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--sh);transition:.18s;display:flex;flex-direction:column;color:var(--tx)}
@@ -258,6 +261,7 @@ details.rev summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--di
 .seg label{flex:1;cursor:pointer}.seg input{position:absolute;opacity:0;pointer-events:none}
 .seg span{display:flex;align-items:center;justify-content:center;gap:7px;padding:9px;border-radius:99px;font-weight:800;font-size:13.5px;color:var(--dim);transition:.2s}
 .seg input:checked+span{background:var(--paper);color:var(--teal2);box-shadow:0 2px 8px rgba(15,46,48,.12)}
+.seg input:focus-visible+span{outline:3px solid rgba(42,157,143,.55)}
 .passwrap{position:relative}.passwrap input{padding-right:46px}
 .passwrap .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;background:none;color:var(--faint);display:grid;place-items:center;border-radius:9px;font-size:16px}
 .passwrap .eye:hover{color:var(--teal);background:var(--soft)}
@@ -319,7 +323,7 @@ details.rev summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--di
     @endif
   </nav>
   <div class="topact">
-    <button class="bell" id="bellBtn" aria-label="Notifikasi">🔔@if ($unread)<span class="n">{{ $unread }}</span>@endif</button>
+    <button class="bell" id="bellBtn" aria-label="Notifikasi" aria-live="polite">🔔@if ($unread)<span class="n">{{ $unread }}</span>@endif</button>
     <div class="uchip">
       <span class="ava {{ $isSec ? 'sec' : '' }}">{{ $u->initials }}</span>
       <span><span class="un">{{ explode(' ', $u->namaLengkap)[0] }}</span><br><span class="ur">{{ $isSec ? 'Security' : 'Civitas' }}</span></span>
@@ -328,10 +332,12 @@ details.rev summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--di
     <div class="npanel" id="npanel">
       <div class="nh"><b style="font-size:14px">Notifikasi</b>
         <form method="POST" action="{{ route('notifikasi.bacaSemua') }}">@csrf<button class="btn xs">Tandai semua dibaca</button></form></div>
-      @forelse ($notifs as $n)
-        <a class="notif {{ $n->isRead ? '' : 'unread' }}" href="{{ route('notifikasi.baca', $n->id) }}">
-          <div><p>{{ $n->message }}</p><small>{{ \Illuminate\Support\Carbon::parse($n->createdAt)->diffForHumans() }}</small></div></a>
-      @empty <div class="empty" style="padding:20px"><b>Belum ada notifikasi</b></div> @endforelse
+      <div id="nlist">
+        @forelse ($notifs as $n)
+          <a class="notif {{ $n->isRead ? '' : 'unread' }}" href="{{ route('notifikasi.baca', $n->id) }}">
+            <div><p>{{ $n->message }}</p><small>{{ \Illuminate\Support\Carbon::parse($n->createdAt)->diffForHumans() }}</small></div></a>
+        @empty <div class="empty" style="padding:20px"><b>Belum ada notifikasi</b></div> @endforelse
+      </div>
     </div>
   </div>
 </header>
@@ -361,7 +367,7 @@ details.rev summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--di
 </div>
 
 <div class="modal-wrap" id="confirmWrap">
-  <div class="modal" role="dialog" aria-modal="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <div class="mic">!</div><h3 id="confirmTitle">Yakin lanjutkan?</h3><p id="confirmMsg"></p>
     <div class="row" style="justify-content:center">
       <button class="btn" id="confirmNo">Batal</button><button class="btn dn" id="confirmYes">Ya, lanjutkan</button>
@@ -372,57 +378,136 @@ details.rev summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--di
 <script>
 (function () {
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  /* reveal on scroll */
+
+  /* ---------- toast ---------- */
+  const kill = t => { t.classList.add('out'); setTimeout(() => t.remove(), 260); };
+  const pasangToast = t => { const timer = setTimeout(() => kill(t), 5000);
+    t.querySelector('.tx').onclick = () => { clearTimeout(timer); kill(t); }; };
+  const buatToast = (pesan, jenis = 'ok') => {
+    const t = document.createElement('div'); t.className = 'toast ' + jenis;
+    const ic = document.createElement('span'); ic.className = 'tic'; ic.textContent = jenis === 'ok' ? '✓' : (jenis === 'wn' ? '!' : '✕');
+    const p = document.createElement('p'); p.textContent = pesan;
+    const x = document.createElement('button'); x.className = 'tx'; x.textContent = '✕'; x.setAttribute('aria-label', 'Tutup');
+    const pr = document.createElement('i'); pr.className = 'prog';
+    t.append(ic, p, x, pr); $('#toasts').appendChild(t); pasangToast(t);
+  };
+  $$('#toasts .toast').forEach(pasangToast);
+
+  /* ---------- reveal & count-up ---------- */
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
     if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .08 }) : null;
   $$('.reveal').forEach(el => io ? io.observe(el) : el.classList.add('in'));
-  /* count-up */
   $$('[data-count]').forEach(el => { const t = +el.dataset.count, t0 = performance.now();
     const step = n => { const p = Math.min(1, (n - t0) / 850); el.textContent = Math.round(t * (1 - Math.pow(1 - p, 3)));
       if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); });
-  /* toasts */
-  const kill = t => { t.classList.add('out'); setTimeout(() => t.remove(), 260); };
-  $$('#toasts .toast').forEach(t => { const timer = setTimeout(() => kill(t), 5000);
-    t.querySelector('.tx').onclick = () => { clearTimeout(timer); kill(t); }; });
-  /* confirm modal utk form destruktif */
+
+  /* ---------- dialog konfirmasi ---------- */
   let pending = null; const wrap = $('#confirmWrap');
   $$('form[data-confirm]').forEach(f => f.addEventListener('submit', e => {
     if (f.dataset.ok) return; e.preventDefault(); pending = f;
-    $('#confirmMsg').textContent = f.dataset.confirm; wrap.classList.add('open'); }));
+    $('#confirmMsg').textContent = f.dataset.confirm; wrap.classList.add('open'); $('#confirmYes').focus(); }));
   $('#confirmYes').onclick = () => { wrap.classList.remove('open'); if (pending) { pending.dataset.ok = '1'; pending.submit(); } };
   $('#confirmNo').onclick = () => wrap.classList.remove('open');
   wrap.addEventListener('click', e => { if (e.target === wrap) wrap.classList.remove('open'); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { wrap.classList.remove('open'); $('#npanel')?.classList.remove('open'); } });
-  /* pratinjau foto + batas 2MB */
-  $$('input[data-photo]').forEach(inp => inp.addEventListener('change', () => {
-    const f = inp.files[0], img = document.getElementById(inp.dataset.photo); if (!img) return;
-    if (!f) { img.hidden = true; return; }
-    if (f.size > 2 * 1024 * 1024) { alert('Ukuran foto maksimal 2 MB'); inp.value = ''; img.hidden = true; return; }
-    img.src = URL.createObjectURL(f); img.hidden = false; }));
-  /* penghitung karakter */
+
+  /* ---------- kompresi foto (NFR-SRS-02) + pratinjau ---------- */
+  async function kecilkan(file) {
+    if (!/^image\/(jpeg|png)$/.test(file.type) || typeof createImageBitmap !== 'function') return file;
+    let bmp = null;
+    try { bmp = await createImageBitmap(file); } catch (e) { return file; }
+    const max = 1280, k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    if (k === 1 && file.size <= 400 * 1024) { bmp.close?.(); return file; }
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); bmp.close?.();
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+  }
+  $$('input[data-photo]').forEach(inp => inp.addEventListener('change', async () => {
+    const img = document.getElementById(inp.dataset.photo);
+    let f = inp.files[0];
+    if (!f) { if (img) img.hidden = true; return; }
+    const asli = f.size;
+    try {
+      const kecil = await kecilkan(f);
+      if (kecil !== f && typeof DataTransfer === 'function') {
+        const dt = new DataTransfer(); dt.items.add(kecil); inp.files = dt.files; f = kecil;
+        buatToast(`Foto diperkecil otomatis: ${Math.round(asli / 1024)} KB → ${Math.round(f.size / 1024)} KB.`, 'ok');
+      }
+    } catch (e) { /* pakai berkas asli bila peramban tidak mendukung */ }
+    if (f.size > 2 * 1024 * 1024) { buatToast('Ukuran foto maksimal 2 MB.', 'er'); inp.value = ''; if (img) img.hidden = true; return; }
+    if (img) { img.src = URL.createObjectURL(f); img.hidden = false; }
+  }));
+
+  /* ---------- penghitung karakter & lihat sandi ---------- */
   $$('textarea[data-count]').forEach(d => { const c = document.getElementById(d.dataset.count);
     const up = () => { if (c) c.textContent = d.value.length; }; d.addEventListener('input', up); up(); });
-  /* lihat kata sandi */
   $$('.eye').forEach(b => b.addEventListener('click', () => { const i = b.parentElement.querySelector('input');
     const show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.textContent = show ? '🙈' : '👁'; }));
-  /* filter otomatis */
+
+  /* ---------- filter otomatis ---------- */
   $$('[data-auto]').forEach(el => el.addEventListener('change', () => el.form.submit()));
   let deb; $$('[data-live]').forEach(el => el.addEventListener('input', () => {
     clearTimeout(deb); deb = setTimeout(() => el.form.submit(), 450); }));
-  /* placeholder email mengikuti peran */
   const ph = { CIVITAS: 'nama@student.ub.ac.id', SECURITY: 'nama@ub.ac.id' };
   $$('[name=peran]').forEach(r => r.addEventListener('change', () => {
     const em = $('#li-email'); if (em) em.placeholder = ph[r.value]; }));
-  /* lonceng notifikasi */
+
+  /* ---------- akses keyboard untuk baris tabel (NFR-SRS-06) ---------- */
+  $$('tr.cl[onclick]').forEach(tr => {
+    tr.tabIndex = 0; tr.setAttribute('role', 'link');
+    tr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tr.click(); } });
+  });
+
+  /* ---------- lonceng notifikasi ---------- */
   const bell = $('#bellBtn'), panel = $('#npanel');
   bell?.addEventListener('click', e => { e.stopPropagation(); panel.classList.toggle('open'); });
   document.addEventListener('click', e => { if (panel && !e.target.closest('#npanel') && !e.target.closest('#bellBtn')) panel.classList.remove('open'); });
-  /* topbar shadow */
   addEventListener('scroll', () => $('#topbar')?.classList.toggle('scrolled', scrollY > 8), { passive: true });
-  /* gerbang serah terima: bukti + cek KTM */
+
+  /* ---------- gerbang serah terima ---------- */
   const chk = $('#ktm-check'), closeBtn = $('#close-btn');
   const gate = () => { if (closeBtn && chk) closeBtn.disabled = !(closeBtn.dataset.bukti === '1' && chk.checked); };
   chk?.addEventListener('change', gate); gate();
+
+  /* ---------- pembaruan langsung (PKB-SRS-04 / PPB-SRS-09) ---------- */
+  const liveUrl = document.querySelector('meta[name="ringkas-url"]')?.content;
+  const pasangBadge = n => { const b = $('#bellBtn'); if (!b) return; let e = b.querySelector('.n');
+    if (n > 0) { if (!e) { e = document.createElement('span'); e.className = 'n'; b.appendChild(e); } e.textContent = n; }
+    else e?.remove(); };
+  const gambarNotif = list => { const w = $('#nlist'); if (!w) return; w.innerHTML = '';
+    if (!list.length) { const d = document.createElement('div'); d.className = 'empty'; d.style.padding = '20px';
+      const b = document.createElement('b'); b.textContent = 'Belum ada notifikasi'; d.appendChild(b); w.appendChild(d); return; }
+    list.forEach(n => { const a = document.createElement('a'); a.className = 'notif' + (n.baru ? ' unread' : ''); a.href = n.url;
+      const d = document.createElement('div'), p = document.createElement('p'), s = document.createElement('small');
+      p.textContent = n.pesan; s.textContent = n.waktu; d.append(p, s); a.appendChild(d); w.appendChild(a); }); };
+  let pernahSegarkan = false;
+  async function segarkan() {
+    if (!liveUrl || document.hidden) return;
+    try {
+      const r = await fetch(liveUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+      if (!r.ok) return;
+      const d = await r.json();
+      pasangBadge(d.unread); gambarNotif(d.notifikasi || []);
+      if (d.stat) Object.entries(d.stat).forEach(([k, v]) => {
+        const el = document.querySelector(`[data-stat="${k}"]`); if (el) el.textContent = v; });
+      let berubah = false;
+      (d.laporan || []).forEach(l => {
+        const el = document.querySelector(`[data-status-badge="${l.kode}"]`);
+        if (el && el.dataset.status !== l.status) {
+          el.dataset.status = l.status; el.className = 'bd ' + l.badge + ' flash'; el.textContent = l.label; berubah = true;
+        }
+      });
+      if (berubah && pernahSegarkan) buatToast('Status laporanmu diperbarui otomatis.', 'ok');
+      pernahSegarkan = true;
+    } catch (e) { /* jaringan kampus tidak stabil: coba lagi siklus berikutnya */ }
+  }
+  if (liveUrl) {
+    setInterval(segarkan, 25000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) segarkan(); });
+  }
 })();
 </script>
 @stack('skrip')

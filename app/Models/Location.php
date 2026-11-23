@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/** [VP] Entitas Location — STATUS: KERANGKA. TODO VP: fillable, relasi, accessor usage. */
 class Location extends Model
 {
     use HasFactory, HasUuids;
@@ -14,12 +13,10 @@ class Location extends Model
     public $timestamps = false;
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $guarded = ['id'];
+    protected $fillable = ['name'];
 
-    // TODO VP:
-    // protected $fillable = ['name'];
-    // public function rooms()        { return $this->hasMany(Room::class, 'locationId'); }
-    // public function lostReports()  { return $this->hasMany(LostReport::class, 'locationId'); }
-    // public function foundReports() { return $this->hasMany(FoundReport::class, 'locationId'); }
-    // public function getUsageAttribute(): int { return jumlah laporan yang memakai gedung ini; }
+    public function rooms() { return $this->hasMany(Room::class, 'locationId'); }
+    public function lostReports() { return $this->hasMany(LostReport::class, 'locationId'); }
+    public function foundReports() { return $this->hasMany(FoundReport::class, 'locationId'); }
+    public function getUsageAttribute(): int { return $this->lostReports()->count() + $this->foundReports()->count(); }
 }

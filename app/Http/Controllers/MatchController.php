@@ -51,12 +51,19 @@ class MatchController extends Controller
     }
 
     // PC007 - verifikasiCocok(matchId, securityId)
+    // Prasyarat UC-07: barang fisik sudah diterima di pos (UC-06).
     public function cocok(string $id)
     {
-        DB::transaction(function () use ($id) {
-            $match = ReportMatch::where('status', 'MATCH_CANDIDATE')->findOrFail($id);
+        $match = ReportMatch::where('status', 'MATCH_CANDIDATE')->findOrFail($id);
+        $found = FoundReport::findOrFail($match->foundReportId);
+
+        if (! $found->receivedAt) {
+            return redirect()->route('receipt.index', ['id' => $found->id])
+                ->with('warning', 'Barang fisik belum diterima di pos. Konfirmasi penerimaan (UC-06) sebelum verifikasi.');
+        }
+
+        DB::transaction(function () use ($match, $found) {
             $lost = LostReport::findOrFail($match->lostReportId);
-            $found = FoundReport::findOrFail($match->foundReportId);
             $match->update(['status' => 'VERIFIED_MATCH', 'verifiedBy' => auth()->id(), 'verifiedAt' => now()]);
             $lost->update(['status' => 'VERIFIED_MATCH']);
             $found->update(['status' => 'VERIFIED_MATCH']);
@@ -67,6 +74,7 @@ class MatchController extends Controller
             $lost->update(['status' => 'NOTIFIED']);
             $found->update(['status' => 'NOTIFIED']);
         });
+
         return redirect()->route('match.index')->with('success', 'Verifikasi berhasil, notifikasi terkirim');
     }
 

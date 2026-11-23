@@ -7,19 +7,24 @@ use App\Models\FoundReport;
 use App\Models\HandoverEvidence;
 use App\Models\LostReport;
 use App\Models\ReportMatch;
+use Illuminate\Support\Carbon;
 
 class HomeController extends Controller
 {
-    /**
-     * [BK] Beranda Civitas — BELUM DIKERJAKAN.
-     * Kirim variabel: $aktif, $menunggu, $baruDitemukan ke view civitas.beranda.
-     */
     public function beranda()
     {
-        abort(501, 'Belum dikerjakan: BK — beranda civitas.');
+        $uid = auth()->id();
+        $mine = LostReport::with(['category', 'location'])->where('reporterId', $uid)->get()
+            ->concat(FoundReport::with(['category', 'location'])->where('reporterId', $uid)->get())
+            ->sortByDesc('createdAt')->values();
+        return view('civitas.beranda', [
+            'aktif' => $mine->where('status', '!=', 'CLOSED')->values(),
+            'menunggu' => $mine->where('status', 'NOTIFIED')->values(),
+            'baruDitemukan' => FoundReport::with(['category', 'location'])->where('status', '!=', 'CLOSED')
+                ->orderByDesc('createdAt')->limit(8)->get(),
+        ]);
     }
 
-    /** [YN] IM02 · UI-11 Dashboard Security — SUDAH TERISI, jangan diubah anggota lain. */
     public function dashboard()
     {
         $stat = [
@@ -31,6 +36,7 @@ class HomeController extends Controller
         $mendesak = ReportMatch::with(['lostReport.category', 'lostReport.location', 'foundReport'])
             ->where('status', 'MATCH_CANDIDATE')->orderBy('createdAt')->limit(5)->get();
 
+        // Grafik 7 hari (kehilangan vs penemuan)
         $chart = collect(range(6, 0))->map(function ($i) {
             $d = now()->subDays($i);
             return ['label' => $d->translatedFormat('D'), 'tgl' => $d->format('d/m'),

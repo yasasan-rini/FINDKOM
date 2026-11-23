@@ -1,18 +1,21 @@
-{{-- [BK] IM02 · UI-03 / UI-003 Form Lapor Kehilangan — BELUM DIKERJAKAN --}}
 @extends('layouts.app')
-@section('judul', 'Lapor Kehilangan')
+@section('judul', $laporan ? 'Ubah Laporan Kehilangan' : 'Lapor Kehilangan')
 @section('konten')
-<div class="empty">
-  <b>Belum dikerjakan — BK</b>
-  Artefak: BK-IM02 · UI-03 / UI-003 · PC003 · SD-03<br>
-  File: <span class="mono">resources/views/lapor/kehilangan.blade.php</span>
-  <div class="small mut" style="margin-top:12px;text-align:left;max-width:560px;margin-inline:auto">
-    Elemen wajib: dropdown <b>gedung</b>, input <b>lantai/ruang</b>, <b>tanggal</b> (max hari ini),
-    <b>jam</b>, dropdown <b>kategori</b>, textarea <b>deskripsi</b> (min 5),
-    unggah <b>foto referensi (opsional)</b>, tombol Kirim →
-    <span class="mono">route('kehilangan.buat')</span> (POST + @csrf + enctype).<br>
-    Variabel dari controller: <span class="mono">$daftarGedung, $daftarKategori, $daftarRuangan, $laporan</span>.
-    Boleh pakai partial <span class="mono">lapor._tab</span> dan <span class="mono">lapor._fields</span>.
-  </div>
-</div>
+<h1 class="reveal">{{ $laporan ? 'Ubah Laporan '.$laporan->reportCode : 'Buat Laporan' }}</h1>
+<p class="sub reveal">Isi data selengkap mungkin — sistem otomatis mencocokkan berdasarkan <b>gedung, kategori, dan rentang waktu ±4 hari</b>.</p>
+@include('lapor._tab', ['aktif' => 'hilang'])
+@include('lapor._sukses')
+<form class="card reveal" style="max-width:760px" method="POST" enctype="multipart/form-data"
+      action="{{ $laporan ? route('laporan.update', ['type' => 'lost', 'id' => $laporan->id]) : route('kehilangan.buat') }}">
+  @csrf @if ($laporan) @method('PUT') @endif
+  <div class="notice" style="margin-top:0">🔍<div><b>Laporan Kehilangan.</b> Foto referensi bersifat opsional, namun sangat membantu verifikasi Security.</div></div>
+  @include('lapor._fields', ['type' => 'LOST'])
+  <div class="fl"><label for="photo">Foto Referensi (opsional, JPG/PNG maks. 2 MB)</label>
+    @if ($laporan?->photoUrl)<img src="{{ $laporan->photoSrc }}" class="pv" alt="Foto tersimpan">@endif
+    <input id="photo" name="photo" type="file" accept="image/jpeg,image/png" data-photo="pvLost">
+    <img id="pvLost" class="pv" hidden alt="Pratinjau">
+    @error('photo')<small class="er">{{ $message }}</small>@enderror</div>
+  <div class="row sp"><span class="tiny faint">🛡 Data hanya digunakan untuk proses pencocokan &amp; verifikasi.</span>
+    <button class="btn dn">{{ $laporan ? 'Simpan Perubahan' : 'Kirim Laporan' }}</button></div>
+</form>
 @endsection

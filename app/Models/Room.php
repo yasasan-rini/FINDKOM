@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-/** [VP] Entitas Room (ekstensi SCF-SRS-10/12) — STATUS: KERANGKA. */
 class Room extends Model
 {
     use HasUuids;
@@ -13,11 +12,19 @@ class Room extends Model
     public $timestamps = false;
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $guarded = ['id'];
+    protected $fillable = ['locationId', 'name'];
 
-    // TODO VP:
-    // protected $fillable = ['locationId', 'name'];
-    // public function location() { return $this->belongsTo(Location::class, 'locationId'); }
-    // public function getUsageAttribute(): int { jumlah laporan dgn locationId+floorRoom sama; }
-    // public function getLabelAttribute(): string { "Gedung F — Lantai 2, Ruang F2.1"; }
+    public function location() { return $this->belongsTo(Location::class, 'locationId'); }
+
+    /** Dipakai laporan? (dicocokkan pada pasangan gedung + floorRoom) */
+    public function getUsageAttribute(): int
+    {
+        return LostReport::where('locationId', $this->locationId)->where('floorRoom', $this->name)->count()
+             + FoundReport::where('locationId', $this->locationId)->where('floorRoom', $this->name)->count();
+    }
+
+    public function getLabelAttribute(): string
+    {
+        return ($this->location?->name ?? '—').' — '.$this->name;
+    }
 }

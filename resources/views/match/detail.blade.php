@@ -4,7 +4,8 @@
 @php $s = $match->skor;
   $sameLoc = $lost->locationId === $found->locationId;
   $sameCat = $lost->categoryId === $found->categoryId;
-  $sameRoom = strtolower(trim($lost->floorRoom)) === strtolower(trim($found->floorRoom)); @endphp
+  $sameRoom = strtolower(trim($lost->floorRoom)) === strtolower(trim($found->floorRoom));
+  $siap = $found->receivedAt !== null; @endphp
 <div class="row reveal" style="margin-bottom:14px">
   <a class="btn gh sm" href="{{ route('match.index') }}">← Daftar kandidat</a>
   <b class="mono" style="font-size:16px">{{ $match->matchCode }}</b>
@@ -39,11 +40,15 @@
   </div>
   @if ($match->revisionNote)<div class="notice blue">✉<div><b>Himbauan revisi terakhir:</b> {{ $match->revisionNote }}</div></div>@endif
   @if ($match->status === 'MATCH_CANDIDATE')
+    @if (! $siap)
+      <div class="notice">📦<div><b>Barang fisik belum diterima di pos.</b> Sesuai UC-07, konfirmasi penerimaan (UC-06) dulu sebelum verifikasi.
+        <a href="{{ route('receipt.index', ['id' => $found->id]) }}"><b>Konfirmasi sekarang →</b></a></div></div>
+    @endif
     <div class="row" style="justify-content:flex-end;margin-top:14px">
       <form method="POST" action="{{ route('match.tolak', $match->id) }}" data-confirm="Tandai bukan barang yang sama? Kedua laporan dibuka kembali agar bisa dicocokkan ulang.">
         @csrf<button class="btn dno">✕ Bukan Barang yang Sama</button></form>
       <form method="POST" action="{{ route('match.cocok', $match->id) }}" data-confirm="Verifikasi kecocokan ini (skor {{ $s['total'] }}%)? Status menjadi Menunggu Diambil dan pelapor menerima notifikasi.">
-        @csrf<button class="btn pr">✓ Verifikasi Cocok</button></form>
+        @csrf<button class="btn pr" @disabled(! $siap)>✓ Verifikasi Cocok</button></form>
     </div>
     <details class="rev"><summary>✉ Kirim Himbauan Revisi (data kurang jelas)</summary>
       <form method="POST" action="{{ route('match.revisi', $match->id) }}" style="margin-top:10px">@csrf
