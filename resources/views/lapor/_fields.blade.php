@@ -14,12 +14,15 @@
       <option value="">— Pilih gedung —</option>
       @foreach ($daftarGedung as $g)<option value="{{ $g->id }}" @selected(old('locationId', $laporan?->locationId) == $g->id)>{{ $g->name }}</option>@endforeach
     </select>@error('locationId')<small class="er">{{ $message }}</small>@enderror</div>
-  <div class="fl"><label for="floorRoom">Lantai / Ruangan</label>
-    <input id="floorRoom" name="floorRoom" maxlength="50" required list="room-list"
-           data-rooms='@json($ruanganJson)' placeholder="cth. Lantai 2, Ruang F2.1"
-           value="{{ old('floorRoom', $laporan?->floorRoom) }}">
-    <datalist id="room-list"></datalist>
-    <div class="hint">Pilih dari daftar ruangan gedung terpilih, atau ketik manual bila belum terdaftar.</div>
+  <div class="fl"><label for="floorRoomSelect">Lantai / Ruangan</label>
+    <select id="floorRoomSelect" required data-rooms='@json($ruanganJson)' data-selected="{{ old('floorRoom', $laporan?->floorRoom) }}">
+      <option value="">— Pilih gedung terlebih dahulu —</option>
+    </select>
+    <input id="floorRoom" name="floorRoom" maxlength="50" required
+           value="{{ old('floorRoom', $laporan?->floorRoom) }}"
+           placeholder="cth. Lantai 2, Ruang F2.1"
+           style="display:none;margin-top:8px">
+    <div class="hint">Pilih ruangan sesuai gedung yang dipilih.</div>
     @error('floorRoom')<small class="er">{{ $message }}</small>@enderror</div>
   <div class="fl"><label for="{{ $dName }}">Tanggal {{ $type === 'LOST' ? 'Kehilangan' : 'Ditemukan' }}</label>
     <input id="{{ $dName }}" name="{{ $dName }}" type="date" max="{{ $today }}" required
@@ -44,17 +47,69 @@
 @push('skrip')
 <script>
 (function () {
-  const fr = document.getElementById('floorRoom'),
-        loc = document.getElementById('locationId'),
-        dl = document.getElementById('room-list');
-  if (!fr || !loc || !dl) return;
-  const rooms = JSON.parse(fr.dataset.rooms || '[]');
+  const sel = document.getElementById('floorRoomSelect'),
+        inp = document.getElementById('floorRoom'),
+        loc = document.getElementById('locationId');
+  if (!sel || !inp || !loc) return;
+
+  const rooms = JSON.parse(sel.dataset.rooms || '[]');
+  let initialVal = sel.dataset.selected || '';
+
   const isi = () => {
-    dl.innerHTML = '';
-    rooms.filter(r => r.l === loc.value).forEach(r => {
-      const o = document.createElement('option'); o.value = r.n; dl.appendChild(o);
+    const gedungId = String(loc.value || '');
+    sel.innerHTML = '';
+    inp.style.display = 'none';
+
+    if (!gedungId) {
+      sel.innerHTML = '<option value="">— Pilih gedung terlebih dahulu —</option>';
+      inp.value = '';
+      return;
+    }
+
+    const optDefault = document.createElement('option');
+    optDefault.value = '';
+    optDefault.textContent = '— Pilih lantai / ruangan —';
+    sel.appendChild(optDefault);
+
+    const daftar = rooms.filter(r => String(r.l) === gedungId);
+    daftar.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.n;
+      o.textContent = r.n;
+      sel.appendChild(o);
     });
+
+    const optManual = document.createElement('option');
+    optManual.value = '__manual__';
+    optManual.textContent = 'Lainnya (ketik manual)...';
+    sel.appendChild(optManual);
+
+    if (initialVal) {
+      if (daftar.some(r => r.n === initialVal)) {
+        sel.value = initialVal;
+        inp.value = initialVal;
+      } else {
+        sel.value = '__manual__';
+        inp.value = initialVal;
+        inp.style.display = 'block';
+      }
+      initialVal = '';
+    } else {
+      inp.value = '';
+    }
   };
+
+  sel.addEventListener('change', () => {
+    if (sel.value === '__manual__') {
+      inp.style.display = 'block';
+      inp.value = '';
+      inp.focus();
+    } else {
+      inp.style.display = 'none';
+      inp.value = sel.value;
+    }
+  });
+
   loc.addEventListener('change', isi);
   isi();
 })();
