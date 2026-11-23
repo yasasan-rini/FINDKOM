@@ -20,7 +20,7 @@ return new class extends Migration
             $t->enum('role', ['CIVITAS', 'SECURITY'])->default('CIVITAS');
             $t->timestamp('createdAt')->useCurrent();
         });
-        DB::statement("ALTER TABLE `User` ADD CONSTRAINT chk_user_email CHECK (email REGEXP '@(student[.])?ub[.]ac[.]id$')");
+        //DB::statement("ALTER TABLE `User` ADD CONSTRAINT chk_user_email CHECK (email REGEXP '@(student[.])?ub[.]ac[.]id$')");
     }
 
     public function down(): void { Schema::dropIfExists('User'); }

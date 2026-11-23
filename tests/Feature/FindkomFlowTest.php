@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class FindkomFlowTest extends TestCase
 {
-    use RefreshDatabase;
+    //use RefreshDatabase;
 
     private const CIVITAS = 'rina.wulandari@student.ub.ac.id';
     private const SECURITY = 'budi.santoso@ub.ac.id';

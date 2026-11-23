@@ -17,7 +17,7 @@ return new class extends Migration
             $t->timestamp('expiredAt')->useCurrent();
             $t->foreign('userId', 'fk_session_user')->references('id')->on('User')->cascadeOnDelete();
         });
-        DB::statement('ALTER TABLE `Session` ADD CONSTRAINT chk_session_expired CHECK (expiredAt > createdAt)');
+        //DB::statement('ALTER TABLE `Session` ADD CONSTRAINT chk_session_expired CHECK (expiredAt > createdAt)');
     }
 
     public function down(): void { Schema::dropIfExists('Session'); }

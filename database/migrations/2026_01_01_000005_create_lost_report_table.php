@@ -28,7 +28,7 @@ return new class extends Migration
             $t->foreign('categoryId', 'fk_lost_category')->references('id')->on('Category')->restrictOnDelete();
             $t->index(['status', 'locationId', 'categoryId', 'lostDate'], 'idx_lost_matching');
         });
-        DB::statement('ALTER TABLE LostReport ADD CONSTRAINT chk_lost_description CHECK (CHAR_LENGTH(TRIM(description)) >= 5)');
+        //DB::statement('ALTER TABLE LostReport ADD CONSTRAINT chk_lost_description CHECK (CHAR_LENGTH(TRIM(description)) >= 5)');
     }
 
     public function down(): void { Schema::dropIfExists('LostReport'); }

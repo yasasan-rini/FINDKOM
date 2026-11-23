@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class PerformanceTest extends TestCase
 {
-    use RefreshDatabase;
+    //use RefreshDatabase;
 
     protected function setUp(): void
     {

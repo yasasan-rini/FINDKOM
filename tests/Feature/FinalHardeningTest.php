@@ -8,7 +8,7 @@ use Tests\TestCase;
 
 class FinalHardeningTest extends TestCase
 {
-    use RefreshDatabase;
+    //use RefreshDatabase;
 
     protected function setUp(): void
     {

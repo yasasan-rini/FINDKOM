@@ -8,7 +8,7 @@ use Tests\TestCase;
 
 class AuditCommandTest extends TestCase
 {
-    use RefreshDatabase;
+    //use RefreshDatabase;
 
     protected function setUp(): void
     {

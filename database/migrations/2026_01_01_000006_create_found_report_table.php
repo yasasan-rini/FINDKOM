@@ -34,7 +34,7 @@ return new class extends Migration
             $t->foreign('receivedBy', 'fk_found_receiver')->references('id')->on('User');
             $t->index(['status', 'locationId', 'categoryId', 'foundDate'], 'idx_found_matching');
         });
-        DB::statement('ALTER TABLE FoundReport ADD CONSTRAINT chk_found_description CHECK (CHAR_LENGTH(TRIM(description)) >= 5)');
+        //DB::statement('ALTER TABLE FoundReport ADD CONSTRAINT chk_found_description CHECK (CHAR_LENGTH(TRIM(description)) >= 5)');
     }
 
     public function down(): void { Schema::dropIfExists('FoundReport'); }
