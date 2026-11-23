@@ -26,11 +26,15 @@
 
 <h2 class="reveal">Laporan aktifmu <span class="mut small" style="font-family:var(--fb)">({{ $aktif->count() }})</span></h2>
 @if ($aktif->count())
+<<<<<<< HEAD
   <div class="rgrid reveal">
     @foreach ($aktif->take(4) as $r)
       @include('laporan._rcard', ['r' => $r])
     @endforeach
   </div>
+=======
+  <div class="rgrid reveal">{{ $aktif->take(4)->each(fn ($r) => view('laporan._rcard', ['r' => $r])) }}</div>
+>>>>>>> 8d19054 (Update controllers dan views sesuai Modul 3)
   @if ($aktif->count() > 4)<p style="margin-top:12px"><a href="{{ route('laporan.status') }}" class="btn sm">Lihat semua →</a></p>@endif
 @else
   <div class="empty reveal"><b>Belum ada laporan aktif</b>Laporan yang kamu buat akan tampil di sini beserta statusnya.</div>
