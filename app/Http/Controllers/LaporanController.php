@@ -9,6 +9,7 @@ use App\Models\Location;
 use App\Models\LostReport;
 use App\Models\Notification;
 use App\Models\ReportMatch;
+use App\Models\Room;
 use App\Services\MatchingService;
 use App\Support\Pager;
 use Illuminate\Http\Request;
@@ -35,18 +36,17 @@ class LaporanController extends Controller
         };
     }
 
-<<<<<<< HEAD
+    /** Filter ruangan: pasangan gedung + floorRoom (SCF-SRS-12). */
     private function filterRuangan($query, ?string $roomId)
     {
-        if (! $roomId) return $query;
+        if (!$roomId) return $query;
         $room = Room::find($roomId);
-        return $room ? $query->where('locationId', $room->locationId)->where('floorRoom', $room->name) : $query;
+        return $room
+            ? $query->where('locationId', $room->locationId)->where('floorRoom', $room->name)
+            : $query;
     }
 
-    /** UI-09 — Status & Riwayat + Notifikasi. */
-=======
-    /** UI-09 — Status & Riwayat (milik sendiri). */
->>>>>>> 8d19054 (Update controllers dan views sesuai Modul 3)
+    /** UI-09 — Status & Riwayat + Notifikasi (BK-IM03). */
     public function status(Request $request)
     {
         $uid = auth()->id();
@@ -54,28 +54,24 @@ class LaporanController extends Controller
         $lost = LostReport::with(['category', 'location', 'matches'])->where('reporterId', $uid);
         $found = FoundReport::with(['category', 'location', 'matches'])->where('reporterId', $uid);
         $semua = $this->gabung($lost, $found, 'new');
-        $counts = ['all' => $semua->count(),
+        $counts = [
+            'all' => $semua->count(),
             'aktif' => $semua->whereNotIn('status', ['CLOSED', 'NOTIFIED'])->count(),
             'wait' => $semua->where('status', 'NOTIFIED')->count(),
-            'done' => $semua->where('status', 'CLOSED')->count()];
+            'done' => $semua->where('status', 'CLOSED')->count(),
+        ];
         $laporan = match ($filter) {
             'aktif' => $semua->whereNotIn('status', ['CLOSED', 'NOTIFIED'])->values(),
             'wait' => $semua->where('status', 'NOTIFIED')->values(),
             'done' => $semua->where('status', 'CLOSED')->values(),
             default => $semua,
         };
-<<<<<<< HEAD
         $notifikasi = Notification::where('userId', $uid)->orderByDesc('createdAt')->limit(10)->get();
+
         return view('laporan.status', compact('laporan', 'filter', 'counts', 'notifikasi'));
     }
 
-    /** UI-10 — Cari Barang. */
-=======
-        return view('laporan.status', compact('laporan', 'filter', 'counts'));
-    }
-
-    /** UI-10 — Cari Barang (filter gedung, kategori, jenis, rentang waktu, kata kunci). */
->>>>>>> 8d19054 (Update controllers dan views sesuai Modul 3)
+    /** UI-10 — Cari Barang (gedung, ruangan, kategori, jenis, waktu, kata kunci). */
     public function cari(Request $request)
     {
         $q = trim((string) $request->query('q'));
@@ -88,10 +84,7 @@ class LaporanController extends Controller
                 ->when($request->filled('categoryId'), fn ($w) => $w->where('categoryId', $request->query('categoryId')))
                 ->when($request->filled('tanggal'), fn ($w) => $w->whereDate($dateCol, $request->query('tanggal')))
                 ->when($request->filled('range'), fn ($w) => $w->whereDate($dateCol, '>=', now()->subDays((int) $request->query('range'))->toDateString()));
-<<<<<<< HEAD
             $this->filterRuangan($query, $request->query('room'));
-=======
->>>>>>> 8d19054 (Update controllers dan views sesuai Modul 3)
         };
         $type = $request->query('type');
         $lost = LostReport::query(); $found = FoundReport::query();
@@ -104,7 +97,6 @@ class LaporanController extends Controller
             'daftarGedung' => Location::orderBy('name')->get(),
             'daftarKategori' => Category::orderBy('name')->get(),
         ]);
-<<<<<<< HEAD
     }
 
     /** Query bersama untuk UI-12 dan ekspor CSV — filter selalu identik. */
@@ -129,51 +121,20 @@ class LaporanController extends Controller
             $type === 'LOST' ? $found->whereRaw('1=0') : $found, $request->query('sort', 'new'));
     }
 
+    /** UI-12 — Semua Laporan (Security). */
     public function semua(Request $request)
     {
         return view('laporan.semua', [
             'laporan' => Pager::paginate($this->querySemua($request), 15),
             'daftarGedung' => Location::orderBy('name')->get(),
         ]);
-=======
-    }
-
-    /** UI-12 — Semua Laporan (Security). */
-    public function semua(Request $request)
-    {
-        $q = trim((string) $request->query('q'));
-        $terapkan = function ($query) use ($request, $q) {
-            $query->with(['category', 'location', 'reporter'])
-                ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x
-                    ->where('reportCode', 'like', "%{$q}%")->orWhere('description', 'like', "%{$q}%")
-                    ->orWhere('reporterId', 'like', "%{$q}%")))
-                ->when($request->filled('status'), fn ($w) => $w->where('status', $request->query('status')));
-        };
-        $type = $request->query('tipe');
-        $lost = LostReport::query(); $found = FoundReport::query();
-        $terapkan($lost); $terapkan($found);
-        if ($q !== '') { $lost->orWhere('reporterId', $q); }
-        $items = $this->gabung($type === 'FOUND' ? $lost->whereRaw('1=0') : $lost,
-            $type === 'LOST' ? $found->whereRaw('1=0') : $found, $request->query('sort', 'new'));
-        // filter nama pelapor dilakukan di koleksi (relasi)
-        if ($q !== '') $items = $items->filter(fn ($r) => stripos($r->reportCode, $q) !== false
-            || stripos($r->description, $q) !== false || stripos($r->reporter?->namaLengkap ?? '', $q) !== false)->values();
-
-        return view('laporan.semua', ['laporan' => Pager::paginate($items, 15)]);
->>>>>>> 8d19054 (Update controllers dan views sesuai Modul 3)
     }
 
     public function export(Request $request): StreamedResponse
     {
-<<<<<<< HEAD
         $items = $this->querySemua($request);
         $nama = 'findkom-laporan-'.now()->format('Ymd-His').'.csv';
 
-=======
-        $items = $this->gabung(LostReport::with(['category', 'location', 'reporter']),
-            FoundReport::with(['category', 'location', 'reporter']), 'code');
-        $nama = 'findkom-laporan-'.now()->format('Ymd').'.csv';
->>>>>>> 8d19054 (Update controllers dan views sesuai Modul 3)
         return response()->streamDownload(function () use ($items) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
@@ -181,26 +142,19 @@ class LaporanController extends Controller
             foreach ($items as $r) {
                 fputcsv($out, [$r->reportCode, $r->tipe === 'LOST' ? 'Kehilangan' : 'Penemuan',
                     $r->category->name, $r->location->name, $r->floorRoom, $r->eventDate, $r->eventTime,
-<<<<<<< HEAD
-                    $r->labelStatus, $r->reporter?->namaLengkap ?? '-', $r->description], ';');
-=======
                     $r->labelStatus, $r->reporter?->namaLengkap ?? $r->reporterName ?? '-', $r->description], ';');
->>>>>>> 8d19054 (Update controllers dan views sesuai Modul 3)
             }
             fclose($out);
         }, $nama, ['Content-Type' => 'text/csv; charset=utf-8']);
     }
 
-<<<<<<< HEAD
-=======
     /** Detail laporan (kedua peran; kontak hanya untuk pemilik/Security). */
->>>>>>> 8d19054 (Update controllers dan views sesuai Modul 3)
     public function detail(string $type, string $code)
     {
         $laporan = $this->kelas($type)::with(['category', 'location', 'reporter'])->where('reportCode', $code)->firstOrFail();
         $isSec = auth()->user()->isSecurity();
         $own = $laporan->reporterId === auth()->id();
-        abort_if($laporan->status === 'CLOSED' && ! $own && ! $isSec, 403);
+        abort_if($laporan->status === 'CLOSED' && !$own && !$isSec, 403);
         $related = ReportMatch::with(['lostReport.category', 'foundReport.category'])
             ->where($type === 'lost' ? 'lostReportId' : 'foundReportId', $laporan->id)->get();
         $evidence = HandoverEvidence::with('security')->whereIn('matchId', $related->pluck('id'))->first();
@@ -231,11 +185,14 @@ class LaporanController extends Controller
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', 'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
         $file = $request->file('photo') ?? $request->file('foto');
-        $photoUrl = $file ? $file->store('uploads/'.$type, 'public') : $laporan->photoUrl;
+        if ($file && $laporan->photoUrl && !str_starts_with($laporan->photoUrl, 'img/')) {
+            Storage::disk('public')->delete($laporan->photoUrl);
+        }
         $laporan->update([
             'locationId' => $validated['locationId'], 'floorRoom' => $validated['floorRoom'],
             $d => $validated[$d], $t => $validated[$t], 'categoryId' => $validated['categoryId'],
-            'description' => $validated['description'], 'photoUrl' => $photoUrl,
+            'description' => $validated['description'],
+            'photoUrl' => $file ? $file->store('uploads/'.$type, 'public') : $laporan->photoUrl,
         ]);
         $jumlah = $laporan->isOpen ? MatchingService::run($laporan) : 0;
         return redirect()->route('laporan.status')->with('success',
@@ -253,7 +210,7 @@ class LaporanController extends Controller
                 $m->delete();
                 MatchingService::reopenIfNoCandidate($type === 'lost' ? $m->foundReportId : $m->lostReportId, $type === 'lost' ? 'FOUND' : 'LOST');
             }
-            if ($laporan->photoUrl && ! str_starts_with($laporan->photoUrl, 'img/')) Storage::disk('public')->delete($laporan->photoUrl);
+            if ($laporan->photoUrl && !str_starts_with($laporan->photoUrl, 'img/')) Storage::disk('public')->delete($laporan->photoUrl);
             $laporan->delete();
         });
         return redirect()->route('laporan.status')->with('warning', "Laporan {$laporan->reportCode} dihapus.");
