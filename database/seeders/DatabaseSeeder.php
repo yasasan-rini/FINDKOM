@@ -9,6 +9,7 @@ use App\Models\Location;
 use App\Models\LostReport;
 use App\Models\Notification;
 use App\Models\ReportMatch;
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -19,20 +20,35 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $pw = Hash::make('findkom123');
-        $U = fn ($nama, $nim, $email, $username, $kontak, $role) => User::create([
+        $U = fn ($nama, $nim, $email, $username, $kontak, $role, $hari) => User::create([
             'namaLengkap' => $nama, 'nim' => $nim, 'email' => $email, 'username' => $username,
-            'passwordHash' => $pw, 'kontak' => $kontak, 'role' => $role, 'createdAt' => now()->subDays(40),
+            'passwordHash' => $pw, 'kontak' => $kontak, 'role' => $role, 'createdAt' => now()->subDays($hari),
         ]);
-        $rina = $U('Rina Wulandari', '255150401111099', 'rina.wulandari@student.ub.ac.id', 'rinawulan', '081234567890', 'CIVITAS');
-        $budi = $U('Budi Santoso', null, 'budi.santoso@ub.ac.id', 'budisecurity', '081333445566', 'SECURITY');
-        $dimas = $U('Dimas Prasetyo', '255150407111042', 'dimas.prasetyo@student.ub.ac.id', 'dimasp', '082145678901', 'CIVITAS');
-        $siti = $U('Siti Aminah', '198705122010122001', 'siti.aminah@ub.ac.id', 'sitiaminah', '085712345678', 'CIVITAS');
-        $aldi = $U('Aldi Nugraha', '255150400111017', 'aldi.nugraha@student.ub.ac.id', 'aldinug', '081398765432', 'CIVITAS');
+        $rina = $U('Rina Wulandari', '255150401111099', 'rina.wulandari@student.ub.ac.id', 'rinawulan', '081234567890', 'CIVITAS', 40);
+        $budi = $U('Budi Santoso', null, 'budi.santoso@ub.ac.id', 'budisecurity', '081333445566', 'SECURITY', 39);
+        $dimas = $U('Dimas Prasetyo', '255150407111042', 'dimas.prasetyo@student.ub.ac.id', 'dimasp', '082145678901', 'CIVITAS', 38);
+        $siti = $U('Siti Aminah', '198705122010122001', 'siti.aminah@ub.ac.id', 'sitiaminah', '085712345678', 'CIVITAS', 37);
+        $aldi = $U('Aldi Nugraha', '255150400111017', 'aldi.nugraha@student.ub.ac.id', 'aldinug', '081398765432', 'CIVITAS', 36);
 
         $loc = collect(['Gedung F', 'Gedung G', 'Gedung A', 'Gedung B', 'Kantin FILKOM', 'Area Parkir F', 'Perpustakaan', 'Mushola'])
             ->mapWithKeys(fn ($n) => [$n => Location::create(['name' => $n])->id]);
         $cat = collect(['Dompet', 'Elektronik', 'Kunci', 'Botol Minum', 'Tas & Ransel', 'Dokumen', 'Charger & Kabel', 'Aksesoris', 'Kartu & KTM', 'Lainnya'])
             ->mapWithKeys(fn ($n) => [$n => Category::create(['name' => $n])->id]);
+
+        // Master lantai/ruangan (SCF-SRS-10/12)
+        $ruangan = [
+            'Gedung F' => ['Lobby Gedung F', 'Lantai 2, Ruang F2.1', 'Lantai 2, Ruang F2.3', 'Lantai 2, Koridor F2', 'Ruang F2.5', 'Lab F1.1'],
+            'Gedung G' => ['Lab G3.2', 'Ruang G2.1', 'Lobby Gedung G'],
+            'Gedung A' => ['Lobby Gedung A', 'Lobby dekat papan info', 'Ruang A1.1'],
+            'Gedung B' => ['Ruang B1.1', 'Ruang B1.2'],
+            'Kantin FILKOM' => ['Meja panjang tengah', 'Meja 4 dekat kasir'],
+            'Area Parkir F' => ['Parkir blok A', 'Parkir blok B', 'Aspal dekat gerbang'],
+            'Perpustakaan' => ['Rak baca lantai 1', 'Meja baca lantai 2', 'Meja baca pojok'],
+            'Mushola' => ['Ruang utama Mushola'],
+        ];
+        foreach ($ruangan as $gedung => $daftar) {
+            foreach ($daftar as $nama) Room::create(['locationId' => $loc[$gedung], 'name' => $nama]);
+        }
 
         $R = function (string $kelas, string $kode, $user, string $kategori, string $gedung, string $lantai,
             Carbon $waktu, string $desc, string $status, string $foto, array $extra = []) use ($loc, $cat) {
@@ -64,7 +80,7 @@ class DatabaseSeeder extends Seeder
         $f1 = $R(FoundReport::class, 'F-0001', $dimas, 'Tas & Ransel', 'Perpustakaan', 'Meja baca pojok', $d(19, 15, 40), 'Ransel abu-abu ditemukan di meja baca pojok perpustakaan.', 'CLOSED', 'bag', ['receivedBy' => $budi->id, 'receivedAt' => $d(19, 16, 20)]);
         $m1 = $M('M-0001', $l1, $f1, 'CLOSED', $d(19, 15, 45), ['verifiedBy' => $budi->id, 'verifiedAt' => $d(18, 9)]); $E($m1, $d(17, 10));
         $l2 = $R(LostReport::class, 'L-0002', $aldi, 'Kartu & KTM', 'Gedung F', 'Lantai 2, Ruang F2.1', $d(15, 11), 'Kartu ATM BCA dan KTM terselip di dompet kecil transparan.', 'CLOSED', 'ktm');
-        $f2 = $R(FoundReport::class, 'F-0002', $siti, 'Kartu & KTM', 'Gedung F', 'Koridor F2 dekat tangga', $d(14, 8, 30), 'Kartu ATM + KTM ditemukan di lantai koridor F2 dekat tangga.', 'CLOSED', 'ktm', ['receivedBy' => $budi->id, 'receivedAt' => $d(14, 9, 10)]);
+        $f2 = $R(FoundReport::class, 'F-0002', $siti, 'Kartu & KTM', 'Gedung F', 'Lantai 2, Koridor F2', $d(14, 8, 30), 'Kartu ATM + KTM ditemukan di lantai koridor F2 dekat tangga.', 'CLOSED', 'ktm', ['receivedBy' => $budi->id, 'receivedAt' => $d(14, 9, 10)]);
         $m2 = $M('M-0002', $l2, $f2, 'CLOSED', $d(14, 8, 35), ['verifiedBy' => $budi->id, 'verifiedAt' => $d(13, 10)]); $E($m2, $d(12, 13));
         $l3 = $R(LostReport::class, 'L-0003', $dimas, 'Charger & Kabel', 'Perpustakaan', 'Meja baca lantai 2', $d(8, 13, 30), 'Charger MacBook 61W putih beserta kabel USB-C tergulung rapi.', 'CLOSED', 'charger');
         $f3 = $R(FoundReport::class, 'F-0003', $dimas, 'Charger & Kabel', 'Perpustakaan', 'Meja baca lantai 2', $d(8, 16), 'Charger Apple 61W ditemukan tertinggal di meja baca lantai 2.', 'CLOSED', 'charger', ['receivedBy' => $budi->id, 'receivedAt' => $d(8, 16, 40)]);

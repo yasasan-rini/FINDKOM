@@ -1,17 +1,21 @@
-{{-- [AR] IM02 · UI-04 / UI-004 Form Lapor Penemuan — BELUM DIKERJAKAN --}}
 @extends('layouts.app')
-@section('judul', 'Lapor Penemuan')
+@section('judul', $laporan ? 'Ubah Laporan Penemuan' : 'Lapor Penemuan')
 @section('konten')
-<div class="empty">
-  <b>Belum dikerjakan — AR</b>
-  Artefak: AR-IM02 · UI-04 / UI-004 · PC004 · SD-04<br>
-  File: <span class="mono">resources/views/lapor/penemuan.blade.php</span>
-  <div class="small mut" style="margin-top:12px;text-align:left;max-width:560px;margin-inline:auto">
-    Elemen wajib: gedung, lantai/ruang, tanggal, jam, kategori, deskripsi,
-    unggah <b>foto barang (WAJIB)</b>, teks panduan titip ke Pos Security,
-    tombol Kirim → <span class="mono">route('penemuan.buat')</span>.<br>
-    Variabel: <span class="mono">$daftarGedung, $daftarKategori, $daftarRuangan, $laporan</span>.
-    Partial tersedia: <span class="mono">lapor._tab, lapor._fields, lapor._sukses</span>.
-  </div>
-</div>
+<h1 class="reveal">{{ $laporan ? 'Ubah Laporan '.$laporan->reportCode : 'Buat Laporan' }}</h1>
+<p class="sub reveal">Foto barang <b>wajib</b>. Setelah lapor, titipkan barang fisik ke Pos Security Gedung F dengan menunjukkan kode laporan.</p>
+@include('lapor._tab', ['aktif' => 'temuan'])
+@include('lapor._sukses')
+<form class="card reveal" style="max-width:760px" method="POST" enctype="multipart/form-data"
+      action="{{ $laporan ? route('laporan.update', ['type' => 'found', 'id' => $laporan->id]) : route('penemuan.buat') }}">
+  @csrf @if ($laporan) @method('PUT') @endif
+  <div class="notice green" style="margin-top:0">📦<div><b>Laporan Penemuan.</b> Jangan lupa menitipkan barang ke pos satpam setelah mengisi form ini.</div></div>
+  @include('lapor._fields', ['type' => 'FOUND'])
+  <div class="fl"><label for="foto">Foto Barang Temuan {{ $laporan ? '(kosongkan jika tetap)' : '(wajib, maks. 2 MB)' }}</label>
+    @if ($laporan?->photoUrl)<img src="{{ $laporan->photoSrc }}" class="pv" alt="Foto tersimpan">@endif
+    <input id="foto" name="foto" type="file" accept="image/jpeg,image/png" data-photo="pvFound" {{ $laporan ? '' : 'required' }}>
+    <img id="pvFound" class="pv" hidden alt="Pratinjau">
+    @error('foto')<small class="er">{{ $message }}</small>@enderror</div>
+  <div class="row sp"><span class="tiny faint">🛡 Identitasmu tercatat sebagai penemu resmi.</span>
+    <button class="btn pr">{{ $laporan ? 'Simpan Perubahan' : 'Kirim Laporan' }}</button></div>
+</form>
 @endsection

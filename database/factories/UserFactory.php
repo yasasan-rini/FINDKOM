@@ -4,19 +4,35 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
 
-/** [AR] Factory User — TODO AR: isi definition() sesuai DDL (email wajib domain UB). */
 class UserFactory extends Factory
 {
     protected $model = User::class;
 
     public function definition(): array
     {
-        // TODO AR: namaLengkap, nim (unik), email @student.ub.ac.id (unik),
-        //          username (unik), passwordHash = Hash::make('findkom123'),
-        //          kontak, role CIVITAS, createdAt.
-        return [];
+        $nama = fake('id_ID')->name();
+        $unik = fake()->unique()->numberBetween(1, 999999);
+
+        return [
+            'namaLengkap' => $nama,
+            'nim' => (string) fake()->unique()->numerify('2551504########'),
+            'email' => "user{$unik}@student.ub.ac.id",
+            'username' => "user{$unik}",
+            'passwordHash' => Hash::make('findkom123'),
+            'kontak' => '08'.fake()->numerify('##########'),
+            'role' => 'CIVITAS',
+            'createdAt' => now(),
+        ];
     }
 
-    // TODO AR (opsional): state security() untuk role SECURITY + email @ub.ac.id.
+    public function security(): static
+    {
+        $unik = fake()->unique()->numberBetween(1, 999999);
+        return $this->state(fn () => [
+            'role' => 'SECURITY', 'nim' => null,
+            'email' => "security{$unik}@ub.ac.id", 'username' => "security{$unik}",
+        ]);
+    }
 }
