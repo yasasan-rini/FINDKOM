@@ -15,7 +15,7 @@ use Tests\TestCase;
 
 class MatchingLogicTest extends TestCase
 {
-    //use RefreshDatabase;
+    use RefreshDatabase;
 
     private function pasangan(string $ruangLost, string $ruangFound, int $selisihHari): ReportMatch
     {

@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class FindkomFlowTest extends TestCase
 {
-    //use RefreshDatabase;
+    use RefreshDatabase;
 
     private const CIVITAS = 'rina.wulandari@student.ub.ac.id';
     private const SECURITY = 'budi.santoso@ub.ac.id';
@@ -96,6 +96,11 @@ class FindkomFlowTest extends TestCase
     /** UC-04 + UC-05 — pencocokan otomatis gedung + kategori + ±4 hari */
     public function test_laporan_penemuan_membentuk_kandidat_otomatis(): void
     {
+        if (!extension_loaded('gd')) 
+        {
+            $this->markTestSkipped('GD extension not installed');
+        }
+
         $this->masuk(self::CIVITAS);
         $data = $this->payloadLaporan('Gedung G', 'Elektronik', 'found');
         $data['foto'] = UploadedFile::fake()->image('laptop.jpg', 800, 600);
@@ -135,6 +140,11 @@ class FindkomFlowTest extends TestCase
     /** UC-08 / PC015–PC017 */
     public function test_serah_terima_dua_foto_menutup_semua_laporan(): void
     {
+        if (!extension_loaded('gd')) 
+        {
+            $this->markTestSkipped('GD extension not installed');
+        }
+
         $m = ReportMatch::where('matchCode', 'M-0005')->firstOrFail();
         $this->masuk(self::SECURITY);
 

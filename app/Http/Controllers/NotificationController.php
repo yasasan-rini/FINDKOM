@@ -14,10 +14,13 @@ class NotificationController extends Controller
 {
     public function baca(string $id)
     {
-        $n = Notification::where('userId', auth()->id())->findOrFail($id);
+        $n = Notification::where('userId', auth()->id())->find($id);
+        if (!$n) {
+            abort(404);
+        }
         $n->update(['isRead' => true]);
+        
         $user = auth()->user();
-
         if ($user->isSecurity()) {
             if ($n->matchId && $n->match) {
                 return redirect()->route($n->match->status === 'NOTIFIED' ? 'handover.form' : 'match.detail', $n->matchId);

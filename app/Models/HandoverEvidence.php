@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class HandoverEvidence extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids;
     protected $table = 'HandoverEvidence';
     public $timestamps = false;
     public $incrementing = false;

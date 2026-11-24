@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class SecurityHardeningTest extends TestCase
 {
-    //use RefreshDatabase;
+    use RefreshDatabase;
 
     private const CIVITAS = 'rina.wulandari@student.ub.ac.id';
     private const SECURITY = 'budi.santoso@ub.ac.id';
@@ -104,6 +104,11 @@ class SecurityHardeningTest extends TestCase
     /** Privasi: foto KTM hanya untuk Security & pemilik barang. */
     public function test_foto_ktm_hanya_untuk_security_dan_pemilik(): void
     {
+        if (!extension_loaded('gd')) 
+        {
+            $this->markTestSkipped('GD extension not installed');
+        }
+
         $m = ReportMatch::where('matchCode', 'M-0005')->firstOrFail(); // pemilik: Rina
         $this->masuk(self::SECURITY);
         $this->post("/serah-terima/{$m->id}/bukti", [
